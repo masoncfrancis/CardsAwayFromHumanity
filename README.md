@@ -21,6 +21,16 @@ The game is playable at https://cafh.herokuapp.com/ - It's hosted on a free inst
 
 The server code is designed to be reused for other game types. Simply provide your own class implementing the `Game` protocol, and the rest of the codebase will handle player authentication, room management, horizontal scaling, and more. See `CAFHGame.ts` for a messy yet surprisingly functional implementation of this game's logic.
 
+## Running locally
+
+- Use Node 20: `nvm use`
+- Install dependencies and build client: `npm install`
+- Start Redis with Docker: `docker run --name cafh-redis -p 6379:6379 -d redis:7-alpine`
+- Start server: `npm start`
+- For client hot reload, use `npm run --prefix client serve` instead.
+
+Stop Redis with `docker stop cafh-redis`; start it again with `docker start cafh-redis`.
+
 ## Deploying
 
 This repository is built to be deployed on Heroku, with a heroku-redis addon to handle multiple servers. It's set up to be deployed from Github, so simply clone this repo and deploy it onto an instance with redis.

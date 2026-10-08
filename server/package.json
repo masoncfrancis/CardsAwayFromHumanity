@@ -18,11 +18,12 @@
   },
   "scripts": {
     "dev": "ts-node-dev --respawn --transpileOnly ./app/app.ts",
+    "build": "tsc",
     "prod": "tsc && npm run start",
     "start": "node ./build/server/app/app.js",
     "build-client": "cd ../client && npm run pack"
   },
   "engines": {
-    "node": "12.x"
+    "node": ">=18"
   }
 }
