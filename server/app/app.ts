@@ -1,5 +1,5 @@
 import {onConnection} from "./socket/connectionHandler";
-import redisAdapter, { RedisAdapter } from "socket.io-redis";
+import { createAdapter as redisAdapter } from "socket.io-redis";
 import { redisClient, redisPublisher, redisSubscriber, redisSettings } from "./lib/redis";
 import { io } from "./lib/io";
 import { eventEmitter } from "./lib/event";
@@ -49,4 +49,3 @@ process.on('SIGTERM', function() {
     })
 
 });
-

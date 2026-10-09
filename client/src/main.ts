@@ -6,7 +6,7 @@ Vue.config.productionTip = false
 
 
 import VueSocketIOExt from 'vue-socket.io-extended';
-import io from 'socket.io-client';
+import { io } from 'socket.io-client';
 import Buefy from 'buefy'
 
 Vue.use(Buefy, {

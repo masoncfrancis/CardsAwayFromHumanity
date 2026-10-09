@@ -1,4 +1,4 @@
-import socketIO from "socket.io"
+import { Server } from "socket.io"
 import express from "express"
 import path from "path"
 import * as http from "http"
@@ -18,4 +18,4 @@ app.get('/:roomCode([A-Z]{4})', function (req, res, next) {
     res.sendFile(path.join(startPath, "index.html"), { dotfiles: "allow" });
 });
 
-export const io = socketIO.listen(server)
+export const io = new Server(server)

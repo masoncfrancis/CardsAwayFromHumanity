@@ -1,10 +1,10 @@
 import { Player } from "../state/players/player"
 import { Events, Commands } from "../../../client/shared/events"
 import { redisClient } from "../lib/redis";
-import { Socket } from "net";
+import { Socket } from "socket.io";
 import { Session } from "../state/session";
 
-export function onConnection(socket: SocketIO.Socket) {
+export function onConnection(socket: Socket) {
     console.debug("Hello!")
 
     var session: Session | undefined = undefined

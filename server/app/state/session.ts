@@ -52,7 +52,7 @@ export class Session {
         });
     }
 
-    emit(event: string | symbol, ...args: any[]): boolean {
+    emit(event: string, ...args: any[]): boolean {
         return this.socket?.emit(event, ...args) ?? false
     }
 
