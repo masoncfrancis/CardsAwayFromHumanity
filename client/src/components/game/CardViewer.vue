@@ -27,14 +27,15 @@ import { blackCards, whiteCards } from "../meta/cards";
 export default class CardViewer extends Vue {
   showScoreboard = false;
   showRoomCode = true;
+  gameState!: GameState;
 
   Stage = GameStage;
 
-  get winner(this: any): GameStatePlayer | undefined {
+  get winner(): GameStatePlayer | undefined {
     return (this.gameState as GameState).players.find(player => player.winner)
   }
 
-  get cards(this: any) {
+  get cards() {
     const stage = (this.gameState as GameState).stage
     if(stage == GameStage.celebratingWinner) {
       return [(this.gameState as GameState).gameInfo.winningCard]

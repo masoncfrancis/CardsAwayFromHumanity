@@ -36,7 +36,9 @@ import { mapState } from "vuex";
   }
 })
 export default class Invite extends Vue {
-  get url(this: any): string {
+  joinedRoom!: string;
+
+  get url(): string {
     return `https://cafh.herokuapp.com/# Room Code: ${this.joinedRoom}`;
   }
 

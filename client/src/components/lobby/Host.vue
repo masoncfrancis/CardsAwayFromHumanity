@@ -122,7 +122,8 @@
 <script lang="ts">
 import { Component, Prop, Vue } from "vue-property-decorator";
 import { Events, Commands } from "../../../shared/events";
-import { ModalConfig } from "buefy/types/components";
+
+type ModalParent = Vue & { canCancel: boolean };
 
 @Component({
   sockets: {
@@ -171,7 +172,7 @@ export default class Host extends Vue {
       payload["password"] = this.password;
     }
 
-    (this.$parent as ModalConfig).canCancel = false;
+    (this.$parent as ModalParent).canCancel = false;
 
     this.$socket.client.emit(Commands.hostGame, payload);
   }

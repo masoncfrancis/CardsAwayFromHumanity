@@ -92,8 +92,11 @@ export default class Game extends Vue {
   Stage = GameStage;
   State = ClientState;
   showRoomCode = true;
+  gameState!: any;
+  user!: any;
+  currentState!: ClientState;
 
-  get showBlackCard(this: any): boolean {
+  get showBlackCard(): boolean {
     if (
       this.gameState.stage == GameStage.waitingToStart ||
       this.gameState.stage == GameStage.notEnoughPlayers ||
@@ -109,19 +112,19 @@ export default class Game extends Vue {
     return true;
   }
 
-  get czar(this: any) {
+  get czar() {
     return this.gameState.players.find(player => player.czar === true)?.name;
   }
-  get winner(this: any) {
+  get winner() {
     return this.gameState.players.find(player => player.winner === true)?.name;
   }
 
 
-  get isSpectator(this: any): boolean {
+  get isSpectator(): boolean {
     return this.currentState == ClientState.spectating
   }
 
-  get heroText(this: any): string {
+  get heroText(): string {
     switch (this.gameState.stage) {
       case GameStage.pickingCards:
         if(this.isSpectator) {
