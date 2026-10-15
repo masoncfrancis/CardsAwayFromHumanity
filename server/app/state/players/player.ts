@@ -15,38 +15,19 @@ export enum PlayerKeys {
 
 export class Player {
 
-    static getPlayer(playerId: string) {
+    static async getPlayer(playerId: string): Promise<Player> {
+        const localPlayer = state.players[playerId]
+        if (localPlayer !== undefined) {
+            console.debug("Found Local Player")
+            return localPlayer
+        }
 
-        return new Promise<Player>((resolve, reject) => {
-            let localPlayer = state.players[playerId]
-            if (localPlayer !== undefined) {
-                console.debug("Found Local Player")
-                resolve(localPlayer)
-                return
-            }
-
-            // Player is on another server
-
-            redisClient.hgetall(`user:${playerId}`, (err, values) => {
-                if (err !== null) {
-                    reject(err)
-                    return 
-                }
-
-                console.log("player:" + values)
-
-                try {
-                    console.debug("Created Proxy Player")
-                    let newPlayer = new ProxyPlayer(values[PlayerKeys.id], values[PlayerKeys.name])
-                    state.players[values.id] = newPlayer
-                    resolve(newPlayer)
-
-                } catch (error) {
-                    reject(error)
-                }
-
-            })
-        });
+        const values = await redisClient.hGetAll(`user:${playerId}`)
+        console.log("player:", values)
+        console.debug("Created Proxy Player")
+        const newPlayer = new ProxyPlayer(values[PlayerKeys.id], values[PlayerKeys.name])
+        state.players[values.id] = newPlayer
+        return newPlayer
     }
 
 

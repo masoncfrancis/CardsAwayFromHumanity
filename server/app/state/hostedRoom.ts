@@ -1,7 +1,7 @@
 import { Room, RoomBase, RoomKeys, RoomMessage } from "./room";
 import { state } from "./state";
 import { Player } from "./players/player";
-import { redisClient, redisSubscriber } from "../lib/redis";
+import { redisClient, subscribeRedis } from "../lib/redis";
 import { randomCode } from "../lib/generator";
 import { CAFHGame } from "./game/CAFHGame";
 import { Game, GameMessage } from "./game/game";
@@ -14,22 +14,17 @@ import { Events, GameCommand } from "../../../client/shared/events";
 // This whole file should use promises.
 
 
-function tryName(callback: (success: boolean, code?: string) => void, attempt: number) {
-
-    var id = randomCode(4)
-
-    redisClient.exists(id, function (err, count) {
+async function tryName(callback: (success: boolean, code?: string) => void, attempt: number) {
+    const id = randomCode(4)
+    try {
+        const count = await redisClient.exists(id)
         if (count > 0) {
-            if (attempt > 20) {
-                callback(false) // give up
-            } else {
-                tryName(callback, attempt + 1)
-            }
-        } else {
-            callback(true, id)
-        }
-    })
-
+            if (attempt > 20) callback(false)
+            else await tryName(callback, attempt + 1)
+        } else callback(true, id)
+    } catch {
+        callback(false)
+    }
 }
 
 export class HostedRoom extends RoomBase implements Room {
@@ -66,28 +61,23 @@ export class HostedRoom extends RoomBase implements Room {
             let channelName = `events:to:${key}`
 
             eventEmitter.on(channelName, this.onMessage)
-            redisSubscriber.subscribe(channelName)
+            void subscribeRedis(channelName)
 
             this.game.loadState(data.gameState)
 
-            redisClient.multi()
+            void redisClient.multi()
                 // Take ownership of the room, expire it in 24 hours
-                .hmset(key, RoomKeys.hosted, String(true))
+                .hSet(key, { [RoomKeys.hosted]: String(true) })
                 .expire(key, 60 * 60 * 24)
-                .exec(function (err, success) {
-                    if (err !== null) {
-                        callback(false)
-                        return
-                    }
+                .exec().then(() => {
                     callback(true, roomCode)
-
-                })
+                }).catch(() => callback(false))
 
             return
         }
 
         let room = this
-        tryName(function (success, code) {
+        void tryName(function (success, code) {
 
             if (!success || code == null) {
                 callback(false)
@@ -96,27 +86,23 @@ export class HostedRoom extends RoomBase implements Room {
 
             let key = `room:${code}`
 
-            var values = [RoomKeys.roomCode, code]
+            const values: Record<string, string> = { [RoomKeys.roomCode]: code }
 
             if (password == undefined) {
-                values.push(RoomKeys.passwordProtected, String(false))
+                values[RoomKeys.passwordProtected] = String(false)
             } else {
-                values.push(RoomKeys.passwordProtected, String(true))
-                values.push(RoomKeys.password, password)
+                values[RoomKeys.passwordProtected] = String(true)
+                values[RoomKeys.password] = password
             }
 
-            values.push(RoomKeys.hosted, String(true))
-            values.push(RoomKeys.host, room.host.id)
+            values[RoomKeys.hosted] = String(true)
+            values[RoomKeys.host] = room.host.id
 
-            redisClient.multi()
+            void redisClient.multi()
                 // Create the room, expire it in 24 hours
-                .hmset(key, values)
+                .hSet(key, values)
                 .expire(key, 60 * 60 * 24)
-                .exec(function (err, success) {
-                    if (err !== null) {
-                        callback(false)
-                        return
-                    }
+                .exec().then(() => {
                     room.roomCode = code
                     room.password = password
 
@@ -127,11 +113,10 @@ export class HostedRoom extends RoomBase implements Room {
                     let channelName = `events:to:${key}`
 
                     eventEmitter.on(channelName, room.onMessage)
-                    redisSubscriber.subscribe(channelName)
+                    void subscribeRedis(channelName)
 
                     callback(true, code)
-
-                })
+                }).catch(() => callback(false))
         }, 0)
 
     }
@@ -140,9 +125,7 @@ export class HostedRoom extends RoomBase implements Room {
         if (this.roomCode == null) {
             return
         }
-        redisClient.multi()
-            .del(`room:${this.roomCode}`)
-            .exec()
+        void redisClient.multi().del(`room:${this.roomCode}`).exec()
 
         delete state.rooms[this.roomCode]
     }
@@ -153,11 +136,11 @@ export class HostedRoom extends RoomBase implements Room {
         }
         console.debug("Saving Room State: " + this.roomCode)
 
-        redisClient.multi()
-            .hmset(`room:${this.roomCode}`, [
-                RoomKeys.hosted, String(false),
-                RoomKeys.gameState, this.game.exportState()
-            ])
+        void redisClient.multi()
+            .hSet(`room:${this.roomCode}`, {
+                [RoomKeys.hosted]: String(false),
+                [RoomKeys.gameState]: this.game.exportState()
+            })
             .exec()
     }
 

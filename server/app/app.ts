@@ -1,51 +1,31 @@
 import {onConnection} from "./socket/connectionHandler";
-import { createAdapter as redisAdapter } from "socket.io-redis";
-import { redisClient, redisPublisher, redisSubscriber, redisSettings } from "./lib/redis";
-import { io } from "./lib/io";
-import { eventEmitter } from "./lib/event";
+import { createAdapter as redisAdapter } from "@socket.io/redis-adapter";
+import { connectRedis, closeRedis, redisPublisher, redisSubscriber } from "./lib/redis";
+import { io, server } from "./lib/io";
 import { state } from "./state/state";
 
+async function start() {
+    await connectRedis()
+    io.adapter(redisAdapter(redisPublisher, redisSubscriber))
+    io.on("connection", onConnection)
+    await new Promise<void>((resolve) => {
+        server.listen(process.env.PORT || 3000, () => resolve())
+    })
+    console.log("Howdy earth")
+}
 
+async function shutdown(signal: string) {
+    console.log(`${signal}, cleaning up`)
+    await state.destroyAll()
+    await closeRedis()
+    io.close()
+    process.exit(0)
+}
 
-io.adapter(redisAdapter(redisSettings));
+process.once("SIGINT", () => { void shutdown("Interrupt signal") })
+process.once("SIGTERM", () => { void shutdown("Termination signal") })
 
-io.on("connection", onConnection);
-
-console.log("Howdy earth")
-
-
-
-redisSubscriber.on("message", function(channel, message) {
-    console.log(channel, message)
-    try {
-        eventEmitter.emit(channel, JSON.parse(message))
-    } catch (error) {
-        console.error(error)
-    }
+void start().catch((error) => {
+    console.error("Failed to start server:", error)
+    process.exitCode = 1
 })
-
-redisSubscriber.on('error', function(err){
-    console.error("Redis SUB: ", err)
-});
-redisPublisher.on('error', function(err){
-    console.error("Redis PUB: ", err)
-});
-redisClient.on('error', function(err){
-    console.error("Redis: ", err)
-});
-
-process.on('SIGINT', function() {
-    console.log("Interrupt signal, cleaning up");
-    state.destroyAll().then(()=> {
-        
-        process.exit()
-    })
-});
-
-process.on('SIGTERM', function() {
-    console.log("Termination signal, cleaning up");
-    state.destroyAll().then(()=> {
-        process.exit()
-    })
-
-});

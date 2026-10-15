@@ -1,4 +1,3 @@
-import { RedisClient } from "redis";
 import { isNullOrUndefined } from "util";
 import { state } from "./state";
 import { Player } from "./players/player";
@@ -16,41 +15,19 @@ export enum RoomKeys {
 
 export class RoomBase {
 
-    static getRoom(roomCode: string) {
+    static async getRoom(roomCode: string): Promise<Room> {
+        const localRoom = state.rooms[roomCode]
+        if (localRoom !== undefined) return localRoom
 
-        return new Promise<Room>((resolve, reject) => {
-            let localRoom = state.rooms[roomCode]
-            if (localRoom !== undefined) {
-                resolve(localRoom)
-                return 
-            }
-            
-            // Room is on another server
+        const values = await redisClient.hGetAll(`room:${roomCode}`)
+        if (values.hosted === String(false)) {
+            return new Promise((resolve, reject) => this.rehostRoom(values, resolve, reject))
+        }
 
-            redisClient.hgetall(`room:${roomCode}`, (err, values) => {
-                if(err !== null) {
-                    reject(err)
-                    return
-                }
-
-                try {
-
-                    if(values.hosted == String(false)) {
-                        this.rehostRoom(values, resolve, reject)
-                        return
-                    }
-                    
-                    console.debug("Created Proxy Room")
-                    let newRoom = new ProxyRoom(values.roomCode, values.password)
-                    state.rooms[values.roomCode] = newRoom
-                    resolve(newRoom)
-                    
-                } catch (error) {
-                    reject(error)
-                }
-                
-            })
-        });
+        console.debug("Created Proxy Room")
+        const newRoom = new ProxyRoom(values.roomCode, values.password)
+        state.rooms[values.roomCode] = newRoom
+        return newRoom
     }
 
     static rehostRoom(values: any, resolve: (room: Room) => void, reject: (reason: any) => void) {
@@ -101,4 +78,3 @@ export class RoomMessage {
 
 import { ProxyRoom } from "./proxyRoom";
 import { GameState, GameCommand } from "../../../client/shared/events";import { HostedRoom } from "./hostedRoom";
-

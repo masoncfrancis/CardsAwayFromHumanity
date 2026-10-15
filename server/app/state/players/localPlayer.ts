@@ -1,7 +1,7 @@
 import { Room, RoomBase, RoomKeys } from "../room";
 import { HostedRoom } from "../hostedRoom";
 import { Events, Commands, PlayerLocation } from "../../../../client/shared/events";
-import { redisClient, redisSubscriber, redisPublisher } from "../../lib/redis";
+import { redisClient, redisPublisher, subscribeRedis, unsubscribeRedis } from "../../lib/redis";
 import { Session } from "../session";
 import { Player, PlayerMessage, PlayerKeys } from "./player";
 import { eventEmitter } from "../../lib/event";
@@ -17,17 +17,19 @@ export class LocalPlayer implements Player {
 
     hostedRoom?: Room
     joinedRoom?: Room
+    ready: Promise<void>
 
     constructor(public id: string, public name: string) {
 
         let key = `user:${id}`
 
-        redisClient.multi()
+        void redisClient.multi()
             // Create the player, expire it in four hours
-            .hmset(key,
-                PlayerKeys.id, id,
-                PlayerKeys.name, name,
-                PlayerKeys.hosted, String(true))
+            .hSet(key, {
+                [PlayerKeys.id]: id,
+                [PlayerKeys.name]: name,
+                [PlayerKeys.hosted]: String(true)
+            })
             .expire(key, 60 * 60 * 4)
             .exec()
 
@@ -40,7 +42,7 @@ export class LocalPlayer implements Player {
         this.broadcastDelete()
 
         eventEmitter.on(channelName, this.onMessage)
-        redisSubscriber.subscribe(channelName)
+        this.ready = subscribeRedis(channelName)
 
     }
 
@@ -63,7 +65,7 @@ export class LocalPlayer implements Player {
 
                 console.log("Got Proxy delete command for id:" + this.id)
                 eventEmitter.off(channelName, this.onMessage)
-                redisSubscriber.unsubscribe(channelName)
+                void unsubscribeRedis(channelName)
                 delete state.players[this.id]
         }
     }
@@ -93,7 +95,7 @@ export class LocalPlayer implements Player {
 
     }
 
-    attemptJoining(payload: Record<string, string>) {
+    async attemptJoining(payload: Record<string, string>) {
 
         let code = payload.gameId.toUpperCase()
 
@@ -103,8 +105,9 @@ export class LocalPlayer implements Player {
             return
         }
 
-        redisClient.hgetall(`room:${code}`, (err, value) => {
-            if (err != null || value == null) {
+        try {
+            const value = await redisClient.hGetAll(`room:${code}`)
+            if (Object.keys(value).length === 0) {
                 this.sendEvent(Events.invalidRoomCode)
                 return
             }
@@ -134,8 +137,9 @@ export class LocalPlayer implements Player {
                 this.joinRoom(code, payload.password)
             }
 
-
-        })
+        } catch (error) {
+            this.sendEvent(Events.invalidRoomCode)
+        }
 
     }
 
@@ -216,40 +220,30 @@ export class LocalPlayer implements Player {
             payload.push(PlayerKeys.room, room)
         }
 
-        redisClient.hmset(key, payload)
+        void redisClient.hSet(key, Object.fromEntries(
+            Array.from({ length: payload.length / 2 }, (_, index) => [payload[index * 2], payload[index * 2 + 1]])
+        ))
     }
 
-    reloadState(): Promise<{location:PlayerLocation, room?: string}> {
-        return new Promise((resolve, reject) => {
-            redisClient.hgetall(`user:${this.id}`, (err, values) => {
-                if(err !== null) {
-                    return reject(err)
-                }
+    async reloadState(): Promise<{location:PlayerLocation, room?: string}> {
+        const values = await redisClient.hGetAll(`user:${this.id}`)
+        const location = values[PlayerKeys.location] as PlayerLocation
+        const result = { location, room: values[PlayerKeys.room] }
 
-                let location = values[PlayerKeys.location] as PlayerLocation
+        if (location === PlayerLocation.inGame) {
+            this.joinRoom(values[PlayerKeys.room])
+        } else if (location === PlayerLocation.spectating) {
+            this.spectate(values[PlayerKeys.room])
+        }
 
-                resolve({
-                    location: location, 
-                    room: values[PlayerKeys.room]
-                })
-
-                if(location === PlayerLocation.inGame) {
-                    this.joinRoom(values[PlayerKeys.room])
-                } else if(location === PlayerLocation.spectating) {
-                    this.spectate(values[PlayerKeys.room])
-                }
-                
-            })
-        })
+        return result
     }
 
     disconnect() {
         console.debug("Saving Player State: " + this.id)
 
-        redisClient.multi()
-            .hmset(`user:${this.id}`, [
-                PlayerKeys.hosted, String(false)
-            ])
+        void redisClient.multi()
+            .hSet(`user:${this.id}`, { [PlayerKeys.hosted]: String(false) })
             .exec()
 
         this.broadcastDelete()
@@ -259,7 +253,7 @@ export class LocalPlayer implements Player {
         let key = `user:${this.id}`
         let message = new PlayerMessage(PlayerCommands.delete, {})
 
-        redisPublisher.publish(`events:from:${key}`, JSON.stringify(message))
-        redisPublisher.publish(`events:to:${key}`, JSON.stringify(message))
+        void redisPublisher.publish(`events:from:${key}`, JSON.stringify(message))
+        void redisPublisher.publish(`events:to:${key}`, JSON.stringify(message))
     }
 }

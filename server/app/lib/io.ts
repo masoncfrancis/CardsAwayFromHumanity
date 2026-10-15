@@ -3,18 +3,23 @@ import express from "express"
 import path from "path"
 import * as http from "http"
 
-let app = express();
-let server = http.createServer(app)
+export const app = express();
+export const server = http.createServer(app)
 
-server.listen(process.env.PORT || 3000)
-
-let startPath = path.join(__dirname, '../../../../dist')
+const startPath = __dirname.includes(`${path.sep}build${path.sep}`)
+    ? path.join(__dirname, '../../../../dist')
+    : path.join(__dirname, '../../dist')
 
 console.log(startPath)
 
 app.use(express.static(startPath));
 
-app.get('/:roomCode([A-Z]{4})', function (req, res, next) {
+app.get('/:roomCode', function (req, res, next) {
+    if (!/^[A-Z]{4}$/.test(req.params.roomCode)) {
+        next()
+        return
+    }
+
     res.sendFile(path.join(startPath, "index.html"), { dotfiles: "allow" });
 });
 

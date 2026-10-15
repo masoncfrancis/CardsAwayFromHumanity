@@ -1,7 +1,7 @@
 import { Player, PlayerMessage } from "./player";
 import { Room } from "../room";
 import { eventEmitter } from "../../lib/event";
-import { redisSubscriber, redisPublisher } from "../../lib/redis";
+import { redisPublisher, subscribeRedis, unsubscribeRedis } from "../../lib/redis";
 import { state } from "../state";
 
 export enum PlayerCommands {
@@ -18,7 +18,7 @@ export class ProxyPlayer implements Player {
         let channelName = `events:from:${key}`
 
         eventEmitter.on(channelName, this.onMessage)
-        redisSubscriber.subscribe(channelName)
+        void subscribeRedis(channelName)
     }
     
     onMessage = (message: PlayerMessage) => {
@@ -28,7 +28,7 @@ export class ProxyPlayer implements Player {
         if(message.type == PlayerCommands.delete) {
             console.log("Got Proxy delete command for id:" + this.id)
             eventEmitter.off(channelName, this.onMessage)
-            redisSubscriber.unsubscribe(channelName)
+            void unsubscribeRedis(channelName)
             delete state.players[this.id]
         }
     }

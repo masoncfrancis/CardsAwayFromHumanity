@@ -36,38 +36,28 @@ class State {
         })
     }
 
-    destroyAll(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            let multi = redisClient.multi()
+    async destroyAll(): Promise<void> {
+        const multi = redisClient.multi()
 
-            // Delete all players on this server
-            Object.keys(this.players).map((key) => {
-                try {
-                    let value = this.players[key] 
-                    if(value instanceof LocalPlayer) {
-                        (value as LocalPlayer).disconnect()
-                    }
-                } catch(err) {
-                    console.error(err)
-                }
-            })
-
-            // Then delete all rooms
-            Object.keys(this.rooms).map((key) => {
-                try {
-                    let value = this.rooms[key] 
-                    if(value instanceof HostedRoom) {
-                        (value as HostedRoom).disconnect()
-                    }
-                } catch(err) {
-                    console.error(err)
-                }
-            })
-
-            multi.exec((err)=> {
-                resolve()
-            })
+        Object.keys(this.players).forEach((key) => {
+            try {
+                const value = this.players[key]
+                if (value instanceof LocalPlayer) (value as LocalPlayer).disconnect()
+            } catch (error) {
+                console.error(error)
+            }
         })
+
+        Object.keys(this.rooms).forEach((key) => {
+            try {
+                const value = this.rooms[key]
+                if (value instanceof HostedRoom) (value as HostedRoom).disconnect()
+            } catch (error) {
+                console.error(error)
+            }
+        })
+
+        await multi.exec()
     }
 }
 

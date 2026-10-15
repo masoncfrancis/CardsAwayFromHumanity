@@ -1,6 +1,6 @@
 import { Room, RoomBase, RoomMessage } from "./room";
 import { Player } from "./players/player";
-import { redisSubscriber, redisPublisher } from "../lib/redis";
+import { redisPublisher, subscribeRedis, unsubscribeRedis } from "../lib/redis";
 import { eventEmitter } from "../lib/event";
 import { GameCommand } from "../../../client/shared/events";
 
@@ -29,7 +29,7 @@ export class ProxyRoom extends RoomBase implements Room {
         let channelName = `events:from:${key}`
 
         eventEmitter.on(channelName, this.onMessage)
-        redisSubscriber.subscribe(channelName)
+        void subscribeRedis(channelName)
     }
 
     onMessage(message: RoomMessage) {
@@ -65,7 +65,7 @@ export class ProxyRoom extends RoomBase implements Room {
         let channelName = `events:from:${key}`
 
         eventEmitter.off(channelName, this.onMessage)
-        redisSubscriber.unsubscribe(channelName)
+        void unsubscribeRedis(channelName)
     }
 
 

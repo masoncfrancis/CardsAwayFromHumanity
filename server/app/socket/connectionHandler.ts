@@ -1,6 +1,5 @@
 import { Player } from "../state/players/player"
 import { Events, Commands } from "../../../client/shared/events"
-import { redisClient } from "../lib/redis";
 import { Socket } from "socket.io";
 import { Session } from "../state/session";
 
@@ -14,7 +13,7 @@ export function onConnection(socket: Socket) {
         session?.onDisconnect()
     })
 
-    socket.on(Commands.authenticate, function (data, callback: Function) {
+    socket.on(Commands.authenticate, async function (data, callback: Function) {
 
         try {
             if (session !== undefined) {
@@ -28,8 +27,8 @@ export function onConnection(socket: Socket) {
                 return
             }
 
+            await player.ready
             session = new Session(socket, player)
-
             callback(player.id)
         } catch (err) {
             console.error(err)
@@ -37,7 +36,7 @@ export function onConnection(socket: Socket) {
         }
 
     })
-    socket.on(Commands.rejoin, function (data, callback: Function) {
+    socket.on(Commands.rejoin, async function (data, callback: Function) {
 
 
         try {
@@ -54,14 +53,10 @@ export function onConnection(socket: Socket) {
                 return
             }
 
-            player.reloadState().then((location) => {
-                callback(player!.id, location.location, location.room)
-            }).catch((err) => {
-                console.error(err)
-                socket.emit(Events.unknownError)
-            })
-
+            await player.ready
+            const location = await player.reloadState()
             session = new Session(socket, player)
+            callback(player.id, location.location, location.room)
 
         } catch (err) {
             console.error(err)

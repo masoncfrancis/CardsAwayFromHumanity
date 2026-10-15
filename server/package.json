@@ -5,13 +5,13 @@
   "main": "./build/server/app/app.js",
   "author": "OKatBest",
   "dependencies": {
-    "@types/redis": "^2.8.17",
-    "express": "^4.22.3",
+    "@socket.io/redis-adapter": "^8.3.0",
+    "express": "^5.2.1",
     "socket.io": "^4.8.4",
-    "socket.io-redis": "^6.1.1",
+    "redis": "^5.8.0",
     "ts-node-dev": "^1.0.0-pre.44",
     "typescript": "^4.9.5",
-    "@types/express": "^4.17.6",
+    "@types/express": "^5.0.6",
     "@types/node": "^18.19.0"
   },
   "scripts": {
@@ -23,6 +23,8 @@
     "build-client": "cd ../client && npm run pack"
   },
   "devDependencies": {
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.1.4",
     "vitest": "^3.2.7"
   },
   "engines": {
