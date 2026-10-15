@@ -80,33 +80,36 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { defineComponent } from "vue";
 import { Events, Commands } from "../../shared/events";
 import PrivacyPolicy from "./meta/PrivacyPolicy.vue";
 import Terms from "./meta/Terms.vue";
 import { usernameStorageKey } from '../store';
+import { socket } from '../socket';
 
-@Component({
-  sockets: {
-    [Events.invalidUsername](this: Welcome) {
-      this.buttonLoading = false;
-      this.$buefy.toast.open({
-        message: "Invalid username. Please try again.",
-        type: "is-danger"
-      });
+export default defineComponent({
+  data() {
+    return {
+      username: localStorage.getItem(usernameStorageKey) ?? "",
+      accepted: (localStorage.getItem("accepted") ?? String(false)) === String(true),
+      buttonLoading: false
     }
-  }
-})
-export default class Welcome extends Vue {
-  username = localStorage.getItem(usernameStorageKey) ?? "";
-  accepted = (localStorage.getItem("accepted") ?? String(false)) === String(true);
-  buttonLoading = false;
+  },
 
   mounted() {
+    socket.on(Events.invalidUsername, this.onInvalidUsername)
     this.next(false)
-  }
+  },
+  beforeUnmount() {
+    socket.off(Events.invalidUsername, this.onInvalidUsername)
+  },
 
-  next(accept: boolean) {
+  methods: {
+    onInvalidUsername() {
+      this.buttonLoading = false;
+      this.$buefy.toast.open({ message: "Invalid username. Please try again.", type: "is-danger" });
+    },
+    next(accept: boolean) {
     if(accept === true && (this.username === "" || this.username === undefined)) {
       this.accepted = true
       localStorage.setItem("accepted", String(true))
@@ -114,9 +117,9 @@ export default class Welcome extends Vue {
       this.buttonLoading = true
       this.authenticate()
     }
-  }
+    },
 
-  authenticate() {
+    authenticate() {
     if (this.username.length == 0) {
       alert("Please enter a username.");
       return;
@@ -142,25 +145,24 @@ export default class Welcome extends Vue {
       }
     );
     console.log("sent");
-  }
-  openPrivacyPolicy() {
+    },
+    openPrivacyPolicy() {
     this.$buefy.modal.open({
-      parent: this,
       component: PrivacyPolicy,
       trapFocus: true,
       width: 600
     });
-  }
+    },
 
-  openTerms() {
+    openTerms() {
     this.$buefy.modal.open({
-      parent: this,
       component: Terms,
       trapFocus: true,
       width: 600
     });
+    }
   }
-}
+})
 </script>
 
 <style lang="scss">

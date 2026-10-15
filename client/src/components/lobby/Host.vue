@@ -62,7 +62,7 @@
         -->
       </section>
       <footer class="modal-card-foot modal-buttons">
-        <button class="button" type="button" @click="$parent.close()">Close</button>
+        <button class="button" type="button" @click="closeModal()">Close</button>
         <button
           class="button is-primary"
           v-on:click="host()"
@@ -120,14 +120,28 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { defineComponent } from "vue";
 import { Events, Commands } from "../../../shared/events";
+import { socket } from "../../socket";
 
-type ModalParent = Vue & { canCancel: boolean };
-
-@Component({
-  sockets: {
-    [Events.alreadyHosting]() {
+export default defineComponent({
+  mounted() {
+    socket.on(Events.alreadyHosting, this.onAlreadyHosting)
+    socket.on(Events.roomCreationFailed, this.onRoomCreationFailed)
+    socket.on(Events.roomCreated, this.onRoomCreated)
+    socket.on(Events.joinedGame, this.closeModal)
+    socket.on(Events.startedSpectating, this.closeModal)
+  },
+  beforeUnmount() {
+    socket.off(Events.alreadyHosting, this.onAlreadyHosting)
+    socket.off(Events.roomCreationFailed, this.onRoomCreationFailed)
+    socket.off(Events.roomCreated, this.onRoomCreated)
+    socket.off(Events.joinedGame, this.closeModal)
+    socket.off(Events.startedSpectating, this.closeModal)
+  },
+  data() { return { password: "", gameType: 0, gameId: "", points: 8 } },
+  methods: {
+    onAlreadyHosting() {
       this.$buefy.toast.open({
         message: "You are already the host of another room.",
         duration: 5000,
@@ -135,29 +149,10 @@ type ModalParent = Vue & { canCancel: boolean };
         queue: false
       });
     },
-    [Events.roomCreationFailed]() {
-      alert("Room Creation Failed");
-    },
-    [Events.roomCreated](this: Host, roomId) {
-      this.gameId = roomId;
-    },
-    [Events.joinedGame](this: Host, roomId) {
-      (this.$parent as any).close();
-    },
-    [Events.startedSpectating](this: Host, roomId) {
-      (this.$parent as any).close();
-    }
-  }
-})
-export default class Host extends Vue {
-  password = "";
-  gameType = 0;
-
-  gameId = "";
-
-  points = 8;
-
-  host() {
+    onRoomCreationFailed() { alert("Room Creation Failed") },
+    onRoomCreated(roomId: string) { this.gameId = roomId },
+    closeModal() { this.$emit("close") },
+    host() {
     const payload = {};
 
     if (this.gameType == 1) {
@@ -172,17 +167,17 @@ export default class Host extends Vue {
       payload["password"] = this.password;
     }
 
-    (this.$parent as ModalParent).canCancel = false;
+    (this.$parent as any).canCancel = false;
 
     this.$socket.client.emit(Commands.hostGame, payload);
-  }
+    },
 
-  join() {
+    join() {
     this.tryjoining(Commands.joinGame);
-  }
+    },
   spectate() {
     this.tryjoining(Commands.spectate);
-  }
+    },
 
   tryjoining(action: string) {
     if (this.gameId.length != 4) {
@@ -197,8 +192,9 @@ export default class Host extends Vue {
     }
 
     this.$socket.client.emit(Commands.joinGame, payload);
+    }
   }
-}
+})
 </script>
 
 <style lang="scss">
@@ -206,6 +202,43 @@ export default class Host extends Vue {
   max-width: 420px;
   color: black;
   text-align: left;
+
+  .button.is-dark.is-outlined {
+    background-color: #363636;
+    border-color: #363636;
+    color: white;
+
+    &:hover,
+    &.is-hovered {
+      background-color: #222222;
+      border-color: #222222;
+      color: white;
+    }
+  }
+
+  .room-success.message.is-success {
+    background-color: #effaf3 !important;
+    color: #257942 !important;
+
+    .message-body {
+      background-color: #effaf3 !important;
+      border-color: #23d160 !important;
+      color: #257942 !important;
+    }
+  }
+
+  .button.is-success {
+    background-color: #23d160;
+    border-color: #23d160;
+    color: white;
+
+    &:hover,
+    &.is-hovered {
+      background-color: #20bc56;
+      border-color: #20bc56;
+      color: white;
+    }
+  }
 
   .b-slider {
     padding: 0 5px;

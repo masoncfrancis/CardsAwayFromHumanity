@@ -1,7 +1,10 @@
 <template>
   <div class="card-picker">
     <div class="cards" :class="{ picked: picked }">
-      <flickity ref="flickity" :options="flickityOptions">
+      <button class="carousel-button previous" type="button" aria-label="Previous card" @click="scrollCards(-1)">
+        ‹
+      </button>
+      <div ref="flickity" class="card-scroller">
         <div class="card-container" v-for="card in cards" :key="card">
           <p class="white-card helvetica" v-html="getWhiteCard(card)"></p>
           <div class="picker">
@@ -14,65 +17,47 @@
             >Pick Card</b-button>
           </div>
         </div>
-      </flickity>
+      </div>
+      <button class="carousel-button next" type="button" aria-label="Next card" @click="scrollCards(1)">
+        ›
+      </button>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue, Watch } from "vue-property-decorator";
-import Flickity from "vue-flickity";
+import { defineComponent } from "vue";
 import { whiteCards } from '../meta/cards';
 import { mapState } from 'vuex';
 import { Commands, GameCommand, GameState } from '../../../shared/events';
 
-@Component({
-  components: {
-    Flickity
-  },
+export default defineComponent({
   computed: {
-    ...mapState(["user", "gameState"])
-  }
-})
-export default class Game extends Vue {
-  picked = false;
-
-
-  @Watch('cards')
-  onCardsChanged() {
-    console.log(this.$refs.flickity);
-    (this.$refs.flickity as any).reloadCells()
-  }
-
-  get cards() {
-    const anyThis = this as any
-    if(anyThis.user.isCzar) {
-      return (anyThis.gameState as GameState).players.map((player) => 
-        player.card
-      ).filter(card => card !== undefined)
-    } else {
-      return anyThis.user.hand
+    ...mapState(["user", "gameState"]),
+    cards() {
+      if (this.user.isCzar) {
+        return (this.gameState as GameState).players.map(player => player.card).filter(card => card !== undefined)
+      }
+      return this.user.hand
+    }
+  },
+  data() {
+    return { picked: false, isMoving: false }
+  },
+  methods: {
+    getWhiteCard(card: number) {
+      return whiteCards[card] ?? "Card not found?? Please tell the dev thank you!"
+    },
+    pick(card: number) {
+      this.picked = true
+      this.$socket.client.emit(Commands.gameCommand, GameCommand.pickCard, card)
+    },
+    scrollCards(direction: number) {
+      const scroller = this.$refs.flickity as HTMLElement
+      scroller.scrollBy({ left: direction * scroller.clientWidth * 0.8, behavior: "smooth" })
     }
   }
-
-  getWhiteCard(card: number) {
-    return whiteCards[card] ?? "Card not found?? Please tell the dev thank you!"
-  }
-
-  isMoving = false;
-
-  flickityOptions = {
-    selectedAttraction: 0.2,
-    friction: 0.6
-  };
-
-  pick(card: number) {
-    (this.$refs.flickity as any).disableDrag()
-    this.picked = true
-
-    this.$socket.client.emit(Commands.gameCommand, GameCommand.pickCard, card);
-  }
-}
+})
 </script>
 
 
@@ -81,6 +66,44 @@ export default class Game extends Vue {
 
 .flickity-viewport {
   overflow: visible;
+}
+
+.card-scroller {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.card-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.carousel-button {
+  position: absolute;
+  z-index: 2;
+  top: 90px;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 5px;
+  background: #333;
+  color: white;
+  font-size: 34px;
+  line-height: 24px;
+  cursor: pointer;
+}
+
+.carousel-button:hover {
+  background: #f90;
+}
+
+.carousel-button.previous {
+  left: 10px;
+}
+
+.carousel-button.next {
+  right: 10px;
 }
 
 .flickity-button {
@@ -101,7 +124,7 @@ export default class Game extends Vue {
 }
 
 .picked {
-  .flickity-button {
+  .carousel-button {
     display: none;
   }
 }
@@ -126,6 +149,8 @@ export default class Game extends Vue {
 .card-container {
   overflow: visible;
   height: 250px;
+  flex: 0 0 250px;
+  scroll-snap-align: center;
 }
 
 .card-container .white-card {

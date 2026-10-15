@@ -5,6 +5,7 @@
     "postinstall": "npm install --prefix server --include=dev && npm install --prefix client --include=dev && npm run --prefix client pack",
     "start": "npm run --prefix server prod",
     "build": "npm run --prefix client pack && npm run --prefix server build",
+    "test": "npm run --prefix server test",
     "dev": "npm run --prefix server dev"
   },
   "engines": {

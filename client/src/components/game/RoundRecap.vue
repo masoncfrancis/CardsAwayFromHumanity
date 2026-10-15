@@ -70,12 +70,12 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { defineComponent } from "vue";
 import Scoreboard from "./Scoreboard.vue";
 import { mapState } from "vuex";
 import { GameStage, Commands, GameCommand } from "../../../shared/events";
 
-@Component({
+export default defineComponent({
   components: {
     Scoreboard
   },
@@ -104,14 +104,14 @@ import { GameStage, Commands, GameCommand } from "../../../shared/events";
         return "Scores";
       }
     }
+  },
+  data() { return { Stage: GameStage } },
+  methods: {
+    startGame() {
+      this.$socket.client.emit(Commands.gameCommand, GameCommand.startGame);
+    }
   }
 })
-export default class RoundRecap extends Vue {
-  Stage = GameStage;
-  startGame() {
-    this.$socket.client.emit(Commands.gameCommand, GameCommand.startGame);
-  }
-}
 </script>
 
 

@@ -14,52 +14,36 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { defineComponent } from "vue";
 import { GameStage, GameState, GameStatePlayer } from "../../../shared/events";
 import { mapState } from "vuex";
 import { blackCards, whiteCards } from "../meta/cards";
 
-@Component({
+export default defineComponent({
+  data() {
+    return { showScoreboard: false, showRoomCode: true, Stage: GameStage }
+  },
   computed: {
-    ...mapState(["gameState"])
-  }
-})
-export default class CardViewer extends Vue {
-  showScoreboard = false;
-  showRoomCode = true;
-  gameState!: GameState;
-
-  Stage = GameStage;
-
-  get winner(): GameStatePlayer | undefined {
-    return (this.gameState as GameState).players.find(player => player.winner)
-  }
-
-  get cards() {
-    const stage = (this.gameState as GameState).stage
-    if(stage == GameStage.celebratingWinner) {
-      return [(this.gameState as GameState).gameInfo.winningCard]
-    } else {
-      return (this.gameState as GameState).players.map((player) => 
-        player.card
-      ).filter(card => card !== undefined)
+    ...mapState(["gameState"]),
+    winner(): GameStatePlayer | undefined {
+      return (this.gameState as GameState).players.find(player => player.winner)
+    },
+    cards() {
+      const stage = (this.gameState as GameState).stage
+      return stage == GameStage.celebratingWinner
+        ? [(this.gameState as GameState).gameInfo.winningCard]
+        : (this.gameState as GameState).players.map(player => player.card).filter(card => card !== undefined)
+    }
+  },
+  methods: {
+    getBlackCard(card: number) { return blackCards[card] },
+    getWhiteCard(card: number) { return whiteCards[card] },
+    getCzarName(): string {
+      return (this.gameState as GameState).players.find(p => p.czar === true)?.name ?? "Someone"
     }
   }
+})
 
-  getBlackCard(card: number) {
-    return blackCards[card];
-  }
-
-  getWhiteCard(card: number) {
-    return whiteCards[card];
-  }
-  getCzarName(): string {
-    return (
-      ((this as any).gameState as GameState).players.find(p => p.czar === true)
-        ?.name ?? "Someone"
-    );
-  }
-}
 </script>
 
 <style scoped lang="scss">

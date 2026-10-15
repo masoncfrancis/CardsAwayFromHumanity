@@ -44,8 +44,9 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator";
+import { defineComponent } from "vue";
 import { Events, Commands } from "../../../shared/events";
+import { socket } from "../../socket";
 
 enum State {
   Init,
@@ -53,31 +54,38 @@ enum State {
   Password
 }
 
-@Component({
-  sockets: {
-    [Events.invalidRoomCode]() {
-      alert("Invalid Room Code");
-    },
-    [Events.passwordNeeded]() {
-      (this as Join).askPassword(false);
-    },
-    [Events.invalidPassword]() {
-      (this as Join).askPassword(true);
+export default defineComponent({
+  mounted() {
+    socket.on(Events.invalidRoomCode, this.onInvalidRoomCode)
+    socket.on(Events.passwordNeeded, this.onPasswordNeeded)
+    socket.on(Events.invalidPassword, this.onInvalidPassword)
+  },
+  beforeUnmount() {
+    socket.off(Events.invalidRoomCode, this.onInvalidRoomCode)
+    socket.off(Events.passwordNeeded, this.onPasswordNeeded)
+    socket.off(Events.invalidPassword, this.onInvalidPassword)
+  },
+  data() {
+    return {
+      roomCode: "",
+      joinState: State.Init,
+      State,
+      password: "",
+      isPasswordInvalid: false
     }
-  }
-})
-export default class Join extends Vue {
-  roomCode = "";
-  joinState = State.Init;
-  State = State;
-  password = "";
-  isPasswordInvalid = false;
+  },
 
-  get isRoomInvalid() {
-    return this.roomCode.length !== 4 || /[^A-Z]/.test(this.roomCode);
-  }
+  computed: {
+    isRoomInvalid(): boolean {
+      return this.roomCode.length !== 4 || /[^A-Z]/.test(this.roomCode);
+    }
+  },
 
-  join(withPassword: boolean) {
+  methods: {
+    onInvalidRoomCode() { alert("Invalid Room Code") },
+    onPasswordNeeded() { this.askPassword(false) },
+    onInvalidPassword() { this.askPassword(true) },
+    join(withPassword: boolean) {
     if (this.isRoomInvalid) {
       alert("Room code is invalid.");
       return;
@@ -92,9 +100,9 @@ export default class Join extends Vue {
     this.joinState = State.Joining;
 
     this.$socket.client.emit(Commands.joinGame, payload);
-  }
+    },
 
-  spectate() {
+    spectate() {
     if (this.isRoomInvalid) {
       alert("Room code is invalid.");
       return;
@@ -103,14 +111,15 @@ export default class Join extends Vue {
     this.joinState = State.Joining;
 
     this.$socket.client.emit(Commands.joinGame, { gameId: this.roomCode, action: Commands.spectate});
-  }
+    },
 
-  askPassword(isRetry: boolean) {
+    askPassword(isRetry: boolean) {
     this.password = "";
     this.joinState = State.Password;
     this.isPasswordInvalid = isRetry;
+    }
   }
-}
+})
 </script>
 
 <style lang="scss">

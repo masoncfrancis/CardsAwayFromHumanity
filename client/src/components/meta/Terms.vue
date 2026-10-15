@@ -57,10 +57,9 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { defineComponent } from "vue";
 
-@Component
-export default class Terms extends Vue {}
+export default defineComponent({})
 </script>
 
 

@@ -1,8 +1,5 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
+import { createStore } from 'vuex'
 import { GameState, Events, GameEvents, PlayerLocation } from "../../shared/events";
-
-Vue.use(Vuex)
 
 const playerIdKey = "playerId"
 export const usernameStorageKey = "username"
@@ -19,7 +16,7 @@ function s(name: string) {
   return `SOCKET_${name.toUpperCase()}`
 }
 
-export default new Vuex.Store({
+export default createStore({
   state() {
     return {
       user: {

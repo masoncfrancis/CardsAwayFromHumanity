@@ -41,11 +41,12 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { defineComponent } from "vue";
 
-@Component
-export default class GameList extends Vue {
-  data = [
+export default defineComponent({
+  data() {
+    return {
+      data: [
     {
       id: 1,
       host: "QQQQQQQQQQQQQQQ",
@@ -88,10 +89,13 @@ export default class GameList extends Vue {
       stage: "i",
       playerCount: 6
     }
-  ];
+      ]
+    }
+  },
 
-  getStageText(stage: string) {
-    switch (stage) {
+  methods: {
+    getStageText(stage: string) {
+      switch (stage) {
       case "w":
         return "Waiting";
       case "i":
@@ -99,9 +103,10 @@ export default class GameList extends Vue {
 
       default:
         break;
+      }
     }
   }
-}
+})
 </script>
 
 <style lang="scss">

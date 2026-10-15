@@ -23,16 +23,15 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { defineComponent } from "vue";
 
-@Component({
+export default defineComponent({
   methods: {
     reload() {
       location.reload();
     }
   }
 })
-export default class Disconnected extends Vue {}
 </script>
 
 

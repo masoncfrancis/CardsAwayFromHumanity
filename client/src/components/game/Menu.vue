@@ -74,11 +74,11 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { defineComponent } from "vue";
 
-@Component
-export default class Menu extends Vue {
-  toggleFullscreen() {
+export default defineComponent({
+  methods: {
+    toggleFullscreen() {
     const doc: any = document;
     const element: any = document.body;
     const isFullscreen = doc.webkitIsFullScreen || doc.mozFullScreen || false;
@@ -99,21 +99,23 @@ export default class Menu extends Vue {
       };
 
     isFullscreen ? doc.cancelFullScreen() : element.requestFullScreen();
-  }
+    },
 
-  toggleScoreboard() {
+    toggleScoreboard() {
     this.$emit("toggleScoreboard");
-  }
+    },
 
-  toggleRoomCode() {
+    toggleRoomCode() {
     this.$emit("toggleRoomCode");
-  }
+    }
+  },
 
-
-  get canGoFullScreen() {
-    return (typeof document.body.requestFullscreen) === 'function'
+  computed: {
+    canGoFullScreen() {
+      return (typeof document.body.requestFullscreen) === 'function'
+    }
   }
-}
+})
 </script>
 
 

@@ -27,39 +27,26 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { defineComponent } from "vue";
 import { mapState } from "vuex";
 
-@Component({
+export default defineComponent({
   computed: {
-    ...mapState(["joinedRoom"])
+    ...mapState(["joinedRoom"]),
+    url(): string { return `https://cafh.herokuapp.com/# Room Code: ${this.joinedRoom}` },
+    canShare(): boolean { return (navigator as any).share !== undefined }
+  },
+  methods: {
+    share() {
+      (navigator as any).share({ title: `Join me with room code: ${this.joinedRoom}`, url: `https://cafh.herokuapp.com/` });
+    },
+    copy() {
+      (this.$refs.input as any).focus();
+      document.execCommand("copy");
+      navigator.clipboard.writeText(this.url);
+    }
   }
 })
-export default class Invite extends Vue {
-  joinedRoom!: string;
-
-  get url(): string {
-    return `https://cafh.herokuapp.com/# Room Code: ${this.joinedRoom}`;
-  }
-
-  get canShare(): boolean {
-    return (navigator as any).share !== undefined;
-  }
-
-  share(this: any) {
-    (navigator as any).share({
-      title: `Join me with room code: ${this.joinedRoom}`,
-      url: `https://cafh.herokuapp.com/`
-    });
-  }
-
-  copy() {
-    (this.$refs.input as any).focus();
-
-    document.execCommand("copy");
-    navigator.clipboard.writeText(this.url);
-  }
-}
 </script>
 
 

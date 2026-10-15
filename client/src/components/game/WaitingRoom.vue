@@ -17,23 +17,23 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator";
+import { defineComponent } from "vue";
 import {
   Commands,
   GameCommand
 } from "../../../shared/events";
 import { mapState } from "vuex";
 
-@Component({
+export default defineComponent({
   computed: {
     ...mapState(["gameState", "user"])
+  },
+  methods: {
+    startGame() {
+      this.$socket.client.emit(Commands.gameCommand, GameCommand.startGame);
+    }
   }
 })
-export default class Game extends Vue {
-  startGame() {
-    this.$socket.client.emit(Commands.gameCommand, GameCommand.startGame);
-  }
-}
 </script>
 
 <style lang="scss">

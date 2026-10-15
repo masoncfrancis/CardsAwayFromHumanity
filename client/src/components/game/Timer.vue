@@ -3,10 +3,10 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { defineComponent } from "vue";
 import { GameStage } from "../../../shared/events";
 
-@Component({
+export default defineComponent({
   computed: {
     text() {
       switch (this.$store.state.gameState.stage) {
@@ -26,7 +26,6 @@ import { GameStage } from "../../../shared/events";
     }
   }
 })
-export default class Timer extends Vue {}
 </script>
 
 

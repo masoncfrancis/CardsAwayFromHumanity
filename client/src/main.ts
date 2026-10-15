@@ -1,27 +1,36 @@
-import Vue from 'vue'
+import { createApp } from 'vue'
 import App from './App.vue'
 import store from './store'
 
-Vue.config.productionTip = false
-
-
-import VueSocketIOExt from 'vue-socket.io-extended';
-import { io } from 'socket.io-client';
 import Buefy from 'buefy'
+import { socket } from './socket'
+import { Events, GameEvents } from '../shared/events'
 
-Vue.use(Buefy, {
+const app = createApp(App)
+
+app.use(store)
+app.use(Buefy, {
   defaultIconPack: 'fas'
 })
+app.config.globalProperties.$socket = { client: socket }
 
-const socket = io(
-  process.env.NODE_ENV === 'development'
-    ? `ws://${window.location.hostname}:3000`
-    : undefined as any
-);
+socket.on(Events.joinedGame, (...payload) => {
+  store.commit('SOCKET_JOINED', payload)
+})
+socket.on(Events.startedSpectating, (...payload) => {
+  store.commit(`SOCKET_${Events.startedSpectating.toUpperCase()}`, payload)
+})
+socket.on(GameEvents.stateChanged, payload => {
+  store.commit(`SOCKET_${GameEvents.stateChanged.toUpperCase()}`, payload)
+})
+socket.on(GameEvents.timer, time => {
+  store.commit(`SOCKET_${GameEvents.timer.toUpperCase()}`, time)
+})
+socket.on(GameEvents.becomeCzar, () => {
+  store.commit(`SOCKET_${GameEvents.becomeCzar.toUpperCase()}`)
+})
+socket.on(GameEvents.updateHand, hand => {
+  store.commit(`SOCKET_${GameEvents.updateHand.toUpperCase()}`, hand)
+})
 
-Vue.use(VueSocketIOExt, socket, { store });
-
-new Vue({
-  store,
-  render: h => h(App)
-}).$mount('#app')
+app.mount('#app')

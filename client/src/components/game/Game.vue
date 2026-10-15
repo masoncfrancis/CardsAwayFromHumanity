@@ -57,26 +57,19 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { defineComponent } from "vue";
 import Timer from "./Timer.vue";
 import Menu from "./Menu.vue";
 import CardPicker from "./CardPicker.vue";
 import CardViewer from "./CardViewer.vue";
-import {
-  Events,
-  Commands,
-  GameEvents,
-  GameStage,
-  GameCommand
-} from "../../../shared/events";
-import { Socket } from "vue-socket.io-extended";
+import { GameStage } from "../../../shared/events";
 import { mapState } from "vuex";
 import RoundRecap from "./RoundRecap.vue";
 import { ClientState } from "../../store/index";
 import { blackCards } from "../meta/cards";
 import Invite from './Invite.vue';
 
-@Component({
+export default defineComponent({
   components: {
     RoundRecap,
     Timer,
@@ -84,20 +77,13 @@ import Invite from './Invite.vue';
     CardPicker,
     CardViewer
   },
+  data() {
+    return { Stage: GameStage, State: ClientState, showRoomCode: true }
+  },
   computed: {
-    ...mapState(["gameState", "user", "currentState"])
-  }
-})
-export default class Game extends Vue {
-  Stage = GameStage;
-  State = ClientState;
-  showRoomCode = true;
-  gameState!: any;
-  user!: any;
-  currentState!: ClientState;
-
-  get showBlackCard(): boolean {
-    if (
+    ...mapState(["gameState", "user", "currentState"]),
+    showBlackCard(): boolean {
+      if (
       this.gameState.stage == GameStage.waitingToStart ||
       this.gameState.stage == GameStage.notEnoughPlayers ||
       this.gameState.stage == GameStage.startingRound ||
@@ -109,22 +95,12 @@ export default class Game extends Vue {
     if (this.gameState.stage == GameStage.pickingCards) {
       return !this.user.isCzar;
     }
-    return true;
-  }
-
-  get czar() {
-    return this.gameState.players.find(player => player.czar === true)?.name;
-  }
-  get winner() {
-    return this.gameState.players.find(player => player.winner === true)?.name;
-  }
-
-
-  get isSpectator(): boolean {
-    return this.currentState == ClientState.spectating
-  }
-
-  get heroText(): string {
+      return true;
+    },
+    czar() { return this.gameState.players.find(player => player.czar === true)?.name },
+    winner() { return this.gameState.players.find(player => player.winner === true)?.name },
+    isSpectator(): boolean { return this.currentState == ClientState.spectating },
+    heroText(): string {
     switch (this.gameState.stage) {
       case GameStage.pickingCards:
         if(this.isSpectator) {
@@ -143,24 +119,20 @@ export default class Game extends Vue {
       default:
         return "";
     }
-  }
-
-  getBlackCard(card: number) {
-    return (
-      blackCards[card] ?? "Card not found?? Please tell the dev thank you!"
-    );
-  }
-
-  invitePlayers() {
-    this.$buefy.modal.open({
-      parent: this,
+    }
+  },
+  methods: {
+    getBlackCard(card: number) { return blackCards[card] ?? "Card not found?? Please tell the dev thank you!" },
+    invitePlayers() {
+      this.$buefy.modal.open({
       component: Invite,
       hasModalCard: true,
       trapFocus: true,
       width: 400
-    });
+      });
+    }
   }
-}
+})
 </script>
 
 <style scoped lang="scss">

@@ -29,18 +29,16 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { defineComponent } from "vue";
 import { mapState } from "vuex";
 import { GameStage } from "../../../shared/events";
 
-@Component({
+export default defineComponent({
   computed: {
     ...mapState(["gameState"])
-  }
+  },
+  data() { return { Stage: GameStage } }
 })
-export default class Scoreboard extends Vue {
-  Stage = GameStage;
-}
 </script>
 
 

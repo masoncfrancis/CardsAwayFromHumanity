@@ -17,9 +17,13 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpileOnly ./app/app.ts",
     "build": "tsc",
+    "test": "vitest run",
     "prod": "tsc && npm run start",
     "start": "node ./build/server/app/app.js",
     "build-client": "cd ../client && npm run pack"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.7"
   },
   "engines": {
     "node": ">=18"

@@ -57,39 +57,42 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { defineComponent } from "vue";
 import Host from "./Host.vue";
 import Join from "./Join.vue";
 import GameList from "./GameList.vue";
 import { usernameStorageKey } from "../../store/index";
 
-@Component({
+export default defineComponent({
   components: {
     Host,
     Join,
     GameList
-  }
-})
-export default class Home extends Vue {
-  activeTab = null;
-  roomCode = "";
+  },
+  data() {
+    return {
+      activeTab: 0,
+      roomCode: ""
+    }
+  },
 
-  host() {
+  methods: {
+    host() {
     this.$buefy.modal.open({
-      parent: this,
       component: Host,
       hasModalCard: true,
       trapFocus: true,
       width: 420
     });
-  }
+    },
 
-  changeName() {
+    changeName() {
     localStorage.removeItem(usernameStorageKey)
     // Definitely not an ideal solution.
     location.reload()
+    }
   }
-}
+})
 </script>
 
 <style lang="scss">

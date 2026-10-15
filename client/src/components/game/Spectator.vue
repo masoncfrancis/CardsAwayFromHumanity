@@ -18,14 +18,14 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { defineComponent } from "vue";
 import Scoreboard from "./Scoreboard.vue";
 import WaitingRoom from "./WaitingRoom.vue";
 import CardViewer from "./CardViewer.vue";
 import { GameStage, GameState } from "../../../shared/events";
 import { mapState } from "vuex";
 
-@Component({
+export default defineComponent({
   components: {
     Scoreboard,
     WaitingRoom,
@@ -33,21 +33,16 @@ import { mapState } from "vuex";
   },
   computed: {
     ...mapState(["gameState"])
+  },
+  data() {
+    return { showScoreboard: false, showRoomCode: true, Stage: GameStage }
+  },
+  methods: {
+    getCzarName(): string {
+      return (this.gameState as GameState).players.find(p => p.czar === true)?.name ?? "Someone"
+    }
   }
 })
-export default class Spectator extends Vue {
-  showScoreboard = false;
-  showRoomCode = true;
-
-  Stage = GameStage;
-
-  getCzarName(): string {
-    return (
-      ((this as any).gameState as GameState).players.find(p => p.czar === true)
-        ?.name ?? "Someone"
-    );
-  }
-}
 </script>
 
 <style scoped lang="scss">
