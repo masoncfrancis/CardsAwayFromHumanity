@@ -8,13 +8,12 @@
         <div class="card-container" v-for="card in cards" :key="card">
           <p class="white-card helvetica" v-html="getWhiteCard(card)"></p>
           <div class="picker">
-            <b-button
-              type="is-dark"
-              size="is-medium"
-              outlined
+            <button
+              class="button is-dark is-outlined is-medium"
+              type="button"
               v-if="!picked"
               @click="pick(card)"
-            >Pick Card</b-button>
+            >Pick Card</button>
           </div>
         </div>
       </div>
@@ -64,10 +63,6 @@ export default defineComponent({
 <style lang="scss">
 @import url("styles.scss");
 
-.flickity-viewport {
-  overflow: visible;
-}
-
 .card-scroller {
   display: flex;
   overflow-x: auto;
@@ -106,23 +101,6 @@ export default defineComponent({
   right: 10px;
 }
 
-.flickity-button {
-  background: #333;
-}
-.flickity-button:hover {
-  background: #f90;
-}
-
-.flickity-prev-next-button {
-  width: 40px;
-  height: 40px;
-  border-radius: 5px;
-}
-/* icon color */
-.flickity-button-icon {
-  fill: white;
-}
-
 .picked {
   .carousel-button {
     display: none;
@@ -147,6 +125,7 @@ export default defineComponent({
   width: 100%;
 }
 .card-container {
+  position: relative;
   overflow: visible;
   height: 250px;
   flex: 0 0 250px;
@@ -181,11 +160,14 @@ export default defineComponent({
   position: absolute;
   bottom: 20px;
   width: 100%;
+  z-index: 3;
+  pointer-events: auto;
 }
 
 .picker button {
   width: 80%;
   margin: auto;
-  display: none;
+  display: block;
+  pointer-events: auto;
 }
 </style>

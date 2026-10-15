@@ -7,7 +7,9 @@
           v-model="roomCode"
           size="is-large"
           placeholder="AAAH"
-          @input="roomCode=$event.toUpperCase()"
+          maxlength="4"
+          autocomplete="off"
+          @update:modelValue="setRoomCode"
         ></b-input>
         <div class="control">
           <b-button
@@ -82,10 +84,14 @@ export default defineComponent({
   },
 
   methods: {
+    setRoomCode(value: string) {
+      this.roomCode = value.toUpperCase().replace(/\s/g, "").slice(0, 4)
+    },
     onInvalidRoomCode() { alert("Invalid Room Code") },
     onPasswordNeeded() { this.askPassword(false) },
     onInvalidPassword() { this.askPassword(true) },
     join(withPassword: boolean) {
+    this.roomCode = this.roomCode.toUpperCase().replace(/\s/g, "").slice(0, 4)
     if (this.isRoomInvalid) {
       alert("Room code is invalid.");
       return;
@@ -103,6 +109,7 @@ export default defineComponent({
     },
 
     spectate() {
+    this.roomCode = this.roomCode.toUpperCase().replace(/\s/g, "").slice(0, 4)
     if (this.isRoomInvalid) {
       alert("Room code is invalid.");
       return;
@@ -125,8 +132,13 @@ export default defineComponent({
 <style lang="scss">
 .join {
   .wide {
-    width: 190px;
+    width: 250px;
+    max-width: 100%;
     margin: auto;
+
+    .control {
+      min-width: 0;
+    }
 
     input {
       font-family: "HelveticaNeueBold", "HelveticaNeue-Bold",

@@ -150,7 +150,7 @@ export default defineComponent({
       });
     },
     onRoomCreationFailed() { alert("Room Creation Failed") },
-    onRoomCreated(roomId: string) { this.gameId = roomId },
+    onRoomCreated(roomId: string) { this.gameId = roomId.toUpperCase() },
     closeModal() { this.$emit("close") },
     host() {
     const payload = {};
@@ -180,6 +180,7 @@ export default defineComponent({
     },
 
   tryjoining(action: string) {
+    this.gameId = this.gameId.toUpperCase().replace(/\s/g, "").slice(0, 4)
     if (this.gameId.length != 4) {
       alert("Cannot join room");
       return;
